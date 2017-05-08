@@ -1,0 +1,144 @@
+What is deep learning?
+
+Input layer - inputs Output layers - answering your question inbetween is the "hidden layer" - billions and billions of neurons that process information
+
+Where is the deep learning? Separate the layers further to include more and more hidden layers - then connect everything - other hidden layers serve as inputs to hidden layers
+ANN Intuition
+Part 1: Plan of attack
+
+    Neuron
+    Activation Function - which one is best for you, which layers you want to use functions in
+    How do neural networks work? - Seeing a neural network in action will give us a goal
+    How do neural networks learn?
+    Gradient Descent - how it's better than a "brute force" method we always use, idiots
+    Stochastic Gradient Descent - even better/stronger than the lame-ass predecessor
+    Backpropagation
+
+The Neuron
+
+The basic building block of deep learning Start with the neuron - gets an input and gives an output
+
+    Inputs are represented by other neurons
+        yellow means an input layer
+        sometimes yellows get inputs from other yellows
+    the inputs are your senses - hear touch smell etc.
+    Your brain is locked in a black box - we have no idea what the heck is going on in there, tastes go in and we taste etc.
+    Signals from inputs are passed through synapses, outputs are passed through other synapses
+
+Lets look at the different elements
+Input layer
+
+    Inputs are independent variables
+        one row in your database, age, money, etc.
+    you need to standardize (mean 0 stddev 1) all your inputs, or normarlize them, which one? We'll find out later, calm down
+        you basically want all of them to be within simular ranges of values- they'll all be combined etc, so it's easier for processing if there's some homogeny
+        good additional reading is http://yann.lecun.com/exdb/bulis/pdf/lecun-98b.pdf for standardization and normalization
+    Output values can be continuous (price) binary (person chose to stay or not) or categorical (one of several values)- need to represent these as numbers Whatever inputs you put in is for one row, the output is that one row - like a multivariate regression, it's always one row per time in a neuron with multiple columns
+
+Synapses
+
+    all assigned weights
+    weighting is crucial - it's how they learn
+        by adjusting the weights the neuron can judge which are most important
+        these are what get adjusted by the neuron - gradient descent/backpropagation
+
+Neuron
+
+    what happens in the neuron?
+        all of the values get added up, it take sthe weighted sum of all the input values
+        add up, multiply by weight, add it up etc.
+    Then it applys an activation function
+        a function assigned to the layer
+        applied to the weighted sum, neuron passes that signal on as the output depending on the function (sometimes it won't pass on the signal from the function?)
+
+The Activation Function
+
+What options do we have for the activation function?
+Threshold function
+
+On the x axis you have the weighted inputs, on the y you have a value from 0 to 1. The threshold function is a smple function, if the value is less than 0 it passes on a 0, if it's greater than 0 than passes on a 1.
+Sigmoid function
+
+1/1+e−x
+1/1+e−x
+It's a function used in logistic regression - what's good about it is it's smooth, unlike the threshold function. Anything below 0 drops off to 0, anything above zero approximates to 1. Helpful for predicting probability
+Rectifier function
+
+most popular for ANN. Anything below 0 is 0 and it moves linearly to 1
+Hyperbolic tangent function
+
+Goes below 0. From -1 below 0 to +1 above 0
+two quick exercises
+
+if you have a binary input, might as well use threshold function?
+
+    two options
+        threshold - got it
+        could also use sigmoid, because the input between 0 and 1, and you want a 0 and 1. Good for predicting probility - will give us the probabili8ty that y = 1 How would it play out if we had multiple inputs and 4 functions in the hidden layer
+    in the hidden layers apply the rectifier function, then the sigmoid in the output function. Why rectifier?
+    Each input goes to each function in the hidden layer
+
+Additional Reading - deep sparce rectifier neural networks. Will tell you why the rectifier function is so popular. link: http://jmlr.org/proceedings/papers/v15/glorot11a/glorot11a.pdf
+How do neural networks work?
+
+Working step by step through the process
+
+    Property valuation is the tutorial example
+        we won't look at training, which you'll need to do normally, but we'll be looking at just the application of the network
+
+Lets say we have some input parameters
+
+    area sqft
+    bedrooms
+    distance to city
+    age
+
+In it's basic form, the input and output only exist, no hidden layers. The inputs are weighted and the output function decides the price
+
+    you can use basically any of the functions we talked about before
+    goes to show how powerful nn's are, even without the layers it's powerful, but the bonus of nn is the additional layers and the power they give
+
+Now we're going to understand how the layer gives the extra power
+Walkthrough of inputs and hidden layers
+
+With all 4 variables on the left, we'll run them all through the first of the 5 hidden layer functions.
+
+    there are synapses that connect this info to the activation function
+        With a specific neuron, we know that some inputs are not important, and some are
+        how do we know this? The neuron (activation func) - from their distance from the city, they have an abnormally high area, the neuron might be picking out those specific properties. It will only fire if the area is large and distance is away from the city. It's focussed?
+    Looking at the middle neuron - we have 3 inputs pointing to this neuron in the hidden layer
+        why does this neuron only focus on these three? It knows that the combination of area/bedrooms/age are important because in its training it found that these properties
+        maybe there's a segment of the population that prefers a certain combination of these three inputs
+        it combines these values into a new attribute to serve as an input to the output neuron
+    the last HL neuron activation function prefers only age as an input
+        it may have identified a correlation with an age threshold and price (very old houses are highly valued)
+        as soon as it sees a property over 100yrs old it will fire up
+        Good example of the rectifier function. It's zero until it reaches an age (0), and then it escalates in price as the age increases
+    The network can pick up things that we wouldn't pick up either
+        combinations of all 4 may exist if there's some correlation that exists
+        The power of the network is that it's flexible and can apply several predictions in one model that are weighted to create the output. Each activation function neuron in the hidden layer can have a threshold to be reached before it "fires" to create an output value. The output is scaled once past the threshold to provide more weight, etc. Looks like the hyperbolic tangent function can provide negative weight as well - interesting
+    How to decide the number of activation functions/neurons in the hidden layer
+    how to decide which activation functions to use for each neuron?
+    how do the neurons not duplicate their results/purpose? Do you prevent that by only having one activation function of each type?
+
+How do Neural Networks Learn?
+
+Two fundamentally different approaches to get a program to do what you want to do:
+
+    hardcoded programming, account for every possible scenario
+    neural networks, you create the facility for the network to decide what to do on its own Two different approaches - our goal is to create the network to learn on its own - avoid putting in rules on our own
+    for instance, how do you distinguish between a dog and a cat - hardcoded means look at nose, shapes, face, colors, etc. describe everything or it fails/sucks. For a neural network, you create the architechure, and then point it at a set of images for cats and dogs that are categorized, and the nn finds out what it needs to understand on its own.
+
+WIth a single layer feed-forward NN (also known as a perceptron). Usually y stands for the actual value, y-hat is the predicted value from the NN
+How does a perceptron learn?
+
+    lets give some input, the activation function is applied, then we get the output y-hat, then compare to the actual
+    Lets calculate the cost function = 1half the square of the difference of y-hat minus y. AKA what's the error in your prediction - the lower the cost the lower the y-hat is to y
+    The cost function is then fed back to the network and the weights are adjusted
+        all we have control of is the weights
+    we update the weights, we'll find out how later
+    We're feeding in the same values (row) over and over, the cost function is fed back in, and the weights are adjusted, the weights continue to change until the cost function is zero
+
+How does it work with multip;le rows?
+
+Each row feeds the same network. One epoch is when we go through the whole dataset and train the network. Once an epoch is completed, the cost function is a sum of all the differences for each row. The weights are updated with the cost function. Weights are the same for each row of data, which is why we use the sum of the cost functions rather than calculate them differently. When the cost function reaches the minimum the model is complete This is called backpropagation Further reading on the cost function: http://stats.stackexchange.com/questions/154879/a-list-of-cost-functions-used-in-neural-networks-alongside-applications
