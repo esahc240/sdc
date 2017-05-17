@@ -44,11 +44,12 @@ X_test = sc.transform(X_test)
 import keras
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import Dropout # dropout regularization to reduce overfitting
 
 # Initializing the ANN
 classifier = Sequential()
 
-# Adding the input layer and the first hidden layer
+# Adding the input layer and the first hidden layer with dropout
 ## Review of processes:
 ## 1. Initialize weights of the synapses to small numbers close to 0 but not 0 (done with Dense)
 ## 2. Input our 11 into the input layer, one feature per node (11 nodes)
@@ -61,11 +62,13 @@ classifier = Sequential()
 #(ctrl+i is help)relu
 # help(keras.layers.core.activation)
 # 'uniform' distributes weights evenly
-classifier.add(Dense(10, kernel_initializer= 'uniform', activation = 'relu', input_shape=(11,)))
+classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu', input_shape=(11,)))
+## adding dropout. try 0.1 then 0.2, do not go over .45 to avoid overfitting
+classifier.add(Dropout(rate = 0.1))
 
 # Adding the second hidden layer
-classifier.add(Dense(10, kernel_initializer= 'uniform', activation = 'relu'))
-
+classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu'))
+classifier.add(Dropout(rate = 0.1))
 # Adding the output layer
 # !! WHEN WORKING WITH A DEPENDENT VARIABLE WITH MULTIPLE OUTPUTS, USE SOFTMAX AND ADJUST OUTPUT UNITS TO MATCH OUTPUT COUNT
 classifier.add(Dense(1, kernel_initializer= 'uniform', activation = 'sigmoid'))
@@ -81,13 +84,15 @@ classifier.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accur
 #############################################################################################################
 
 # Fitting the ANN to the training set (fit method)
-classifier.fit(X_train, y_train, batch_size = 10, nb_epoch=150)
+classifier.fit(X_train, y_train, batch_size = 10, epochs = 100)
+
+#############################################################################################################
 
 # Part 3 - Making the predictions and evaluating the model
 
 # Predicting the Test set results
 y_pred = classifier.predict(X_test)
-y_pred = (y_pred > 0.6) # returns true or false
+y_pred = (y_pred > 0.5) # returns true or false
 
 # Making the Confusion Matrix
 ## we need to adjust the predict output above to be True/False based on a threshold
@@ -95,6 +100,97 @@ from sklearn.metrics import confusion_matrix
 cm = confusion_matrix(y_test, y_pred)
 
 #############################################################################################################
+
+# Part 4 - Evaluating, Impproving and Tuning the ANN
+
+# k-fold cross validation: fixes variance by splitting training set into 10-fold. We train on 9 folds and test on 10 folds
+## There four bias-variance forms:
+    # High Bias Low Vairance (not the most accurate results, but consistent results)
+    # High Bias High Variance (awful, not accurate and not consistent)
+    # Low Bias Low Variance (perfect, accurate and consistent)
+    # Low Bias High Variance (clustered around high accuracy, but not consistent)
+    
+# Evaluating the ANN - get a more accurate picture of the accuracy
+## Combine Keras and Scikitlearn together with a Keras wrapper
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+from keras.models import Sequential
+from keras.layers import Dense
+#First is a function for KerasClassifier that builds the classifier above with all the structure
+
+def build_classifier():
+    classifier = Sequential()
+    classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu', input_shape=(11,)))
+    classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu'))
+    classifier.add(Dense(1, kernel_initializer= 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return classifier
+
+## create a global classifier object
+classifier = KerasClassifier(build_fn=build_classifier, batch_size = 10, epochs = 50)
+## create a variable to measure the best setup for the classifier
+accuracies = cross_val_score(estimator = classifier, X = X_train, y = y_train, cv = 10, n_jobs = -1)
+mean = accuracies.mean()
+variance = accuracies.std()
+
+# Improving the ANN
+## Dropout regularization to reduce overfitting if needed
+## relevant when you have a high variance
+## Overfitting - high accuracy on training but low on test or high variance in K-fold cv
+
+## Where to apply dropout?
+## At different stages of your NN training, you randomly drop neurons so it's forced to try other correlations/weights
+### can be added to just one or multiple - when you ahve overfitting apply it to all layers.
+
+# Tuning the ANN
+## Hyper parameters: epochs, batch, number of neurons etc. 
+## Parameter Tuning finds the best values of hyper parameters
+## Grid-Search: method for parameter tuning
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import GridSearchCV # use sklearn.gridsearch if this fails
+from keras.models import Sequential
+from keras.layers import Dense
+#First is a function for KerasClassifier that builds the classifier above with all the structure
+
+def build_classifier(optimizer):
+    classifier = Sequential()
+    classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu', input_shape=(11,)))
+    classifier.add(Dense(6, kernel_initializer= 'uniform', activation = 'relu'))
+    classifier.add(Dense(1, kernel_initializer= 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+    return classifier
+
+## create a global classifier object
+classifier = KerasClassifier(build_fn=build_classifier)
+## Create a dictionary to hold the hyper parameters you want to tune
+## common practice to take powers of 2
+## rmsprop is recommended for a lot of neural networks, not necessarily ANNs
+parameters = {'batch_size':[25,32],
+              'epochs':[100, 500],
+              'optimizer':['adam','rmsprop']}
+## create gridsearch object to implement your parameters and model
+grid_search = GridSearchCV(estimator = classifier, 
+                           param_grid = parameters,
+                           scoring = 'accuracy',
+                           cv = 10,
+                           n_jobs = 5)
+grid_search = grid_search.fit(X_train, y_train)
+## create variables to track accuracy of various variables
+best_parameters = grid_search.best_params_
+best_accuracy = grid_search.best_score_
+
+
+
+
+
+
+
+
+
+
+
+
+
 # fun tests
 
 # calculate accuracy of confusion matrix
